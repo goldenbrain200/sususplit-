@@ -1,15 +1,17 @@
-const CACHE_NAME = 'sususplit-cache-v5';
+const CACHE_NAME = 'sususplit-cache-v6';
 const urlsToCache = [
   './',
   './index.html',
-  './manifest.json'
+  './manifest.json',
+  './icon.png',
+  './icon-512.png'
 ];
 
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('Opened cache');
+        console.log('Cache updated to v6');
         return cache.addAll(urlsToCache);
       })
   );
@@ -19,13 +21,11 @@ self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request)
       .then(response => {
-        // Cache hit - return response, otherwise fetch from network
         return response || fetch(event.request);
       })
   );
 });
 
-// Clean up old caches when the new version activates
 self.addEventListener('activate', event => {
   const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
