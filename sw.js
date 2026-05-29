@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sususplit-cache-v1';
+const CACHE_NAME = 'sususplit-cache-v3';
 const urlsToCache = [
   './',
   './index.html',
