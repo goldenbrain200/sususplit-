@@ -1,16 +1,21 @@
 {
-  "name": "SusuSplit Open Ledger",
   "short_name": "SusuSplit",
-  "start_url": "./split.html",
-  "display": "standalone",
-  "background_color": "#0d0d0d",
-  "theme_color": "#00cc66",
+  "name": "SusuSplit Open Ledger",
   "icons": [
     {
-      "src": "app-icon.svg",
-      "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "src": "icon.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
     }
-  ]
+  ],
+  "start_url": "index.html",
+  "background_color": "#000000",
+  "theme_color": "#00ff66",
+  "display": "standalone",
+  "orientation": "portrait"
 }
