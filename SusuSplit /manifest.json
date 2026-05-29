@@ -3,13 +3,13 @@
   "name": "SusuSplit Open Ledger",
   "icons": [
     {
-      "src": "icon.png",
-      "type": "image/png",
+      "src": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=192&h=192&fit=crop",
+      "type": "image/jpeg",
       "sizes": "192x192"
     },
     {
-      "src": "icon-512.png",
-      "type": "image/png",
+      "src": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=512&h=512&fit=crop",
+      "type": "image/jpeg",
       "sizes": "512x512"
     }
   ],
