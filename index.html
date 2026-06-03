@@ -3,143 +3,587 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SusuSplit | Ledger</title>
+    <title>SusuSplit Open Ledger</title>
     <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="app-icon.svg">
+    <link rel="apple-touch-icon" href="app-icon.svg">
     <meta name="theme-color" content="#00cc66">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <!-- Supabase CDN Link -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <style>
-        :root { --bg: #0d0d0d; --card: #1a1a1a; --accent: #00cc66; --err: #ff4d4d; --pending: #ffaa00; }
-        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', system-ui; margin: 0; padding: 20px; display: flex; justify-content: center; }
-        .wrapper { width: 100%; max-width: 450px; border: 1px solid var(--accent); border-radius: 20px; padding: 20px; box-shadow: 0 8px 24px rgba(0,204,102,0.15); background: var(--card); }
-        input, select { width: 100%; padding: 12px; margin: 8px 0; background: #222; border: 1px solid #333; color: white; border-radius: 8px; box-sizing: border-box; }
-        button { width: 100%; padding: 15px; background: linear-gradient(135deg, var(--accent) 0%, #00994d 100%); border: none; border-radius: 8px; font-weight: bold; color: #000; cursor: pointer; margin-top: 10px; }
-        .hidden { display: none; }
-        .flex { display: flex; gap: 10px; }
-        .status-dot { height: 10px; width: 10px; border-radius: 50%; background: var(--err); display: inline-block; }
-        .status-dot.online { background: var(--accent); }
-        .ledger-item { border-bottom: 1px dashed #333; padding: 10px 0; font-size: 0.9em; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #0d0d0d;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 16px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .app-container {
+            background-color: #1a1a1a;
+            width: 100%;
+            max-width: 450px;
+            margin: 0 auto 30px auto;
+            border-radius: 20px;
+            border: 1px solid #00cc66;
+            box-shadow: 0 8px 24px rgba(0,204,102,0.15);
+            padding: 20px;
+        }
+
+        h2 {
+            font-size: 24px;
+            color: #00cc66;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        p.subtitle {
+            color: #a6a6a6;
+            font-size: 13px;
+            margin-bottom: 20px;
+        }
+
+        .connection-box {
+            background-color: #222222;
+            padding: 14px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px dashed #00cc66;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background-color: #ff4d4d;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+
+        .status-dot.online {
+            background-color: #00cc66;
+        }
+
+        .tab-container {
+            display: flex;
+            background-color: #262626;
+            padding: 4px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #333333;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px 8px;
+            background: none;
+            border: none;
+            color: #a6a6a6;
+            font-size: 13px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn.active {
+            background-color: #00cc66;
+            color: #000000;
+        }
+
+        .input-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #00cc66;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            background-color: #262626;
+            border: 1px solid #3d3d3d;
+            border-radius: 10px;
+            color: #ffffff;
+            font-size: 15px;
+            outline: none;
+        }
+
+        input:focus, select:focus {
+            border-color: #00cc66;
+        }
+
+        .row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .row .input-group {
+            flex: 1;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            color: #a6a6a6;
+            cursor: pointer;
+        }
+
+        .checkbox-container input {
+            width: auto;
+        }
+
+        .btn-action {
+            background: linear-gradient(135deg, #00cc66 0%, #00994d 100%);
+            color: #000000;
+            border: none;
+            padding: 14px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 8px;
+            margin-bottom: 20px;
+        }
+
+        .btn-secondary {
+            background: #333333;
+            color: #ffffff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .results-section {
+            border-top: 1px solid #2d2d2d;
+            padding-top: 16px;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 15px;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 12px;
+        }
+
+        .member-row {
+            background-color: #1e1e1e;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #2d2d2d;
+        }
+
+        .member-name {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .balance-display {
+            text-align: right;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .status-positive { color: #00cc66; }
+        .status-negative { color: #ff4d4d; }
+        .status-neutral { color: #8a8a8a; }
+
+        .ledger-section {
+            border-top: 1px solid #2d2d2d;
+            padding-top: 16px;
+        }
+
+        .ledger-item {
+            background-color: #161616;
+            border: 1px dashed #333333;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ledger-details {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .ledger-title { font-size: 13px; }
+        .ledger-sub { font-size: 11px; color: #666666; }
+        .ledger-val { font-size: 13px; font-weight: bold; }
+        .text-green { color: #00cc66; }
+        .text-yellow { color: #ffaa00; }
     </style>
 </head>
 <body>
 
-<div class="wrapper" id="app">
-    <!-- GATEWAY -->
-    <div id="screen-gateway">
-        <h1>SusuSplit</h1>
-        <input type="text" id="room-input" value="CAMPUS-404">
-        <input type="text" id="user-input" placeholder="Your Name">
-        <button onclick="initApp()">ENTER LEDGER</button>
+<div class="app-container">
+    <h2>SusuSplit</h2>
+    <p class="subtitle">Cloud-connected hostel room ledger.</p>
+
+    <!-- Setup/Link Screen -->
+    <div id="linkScreen">
+        <div class="input-group">
+            <label for="roomCodeInput">Enter Hostel Room Code</label>
+            <input type="text" id="roomCodeInput" placeholder="e.g., CAMPUS-404" value="CAMPUS-404">
+        </div>
+        <div class="input-group">
+            <label for="currentUserInput">Your Name</label>
+            <input type="text" id="currentUserInput" placeholder="Enter your name">
+        </div>
+        <button class="btn-action" onclick="connectToRoomUI()">Link Into Group</button>
     </div>
 
-    <!-- MAIN WORKSPACE -->
-    <div id="screen-workspace" class="hidden">
-        <div style="background:#222; padding:10px; border-radius:8px; font-size:0.8em; margin-bottom:15px;">
-            <span class="status-dot" id="status-dot"></span> <span id="display-room"></span> | <span id="display-user"></span>
-            <button onclick="location.reload()" style="padding:2px; width:auto; float:right;">Disconnect</button>
+    <!-- Main Workspace Dashboard (Hidden Initially) -->
+    <div id="appContent" style="display: none;">
+        <div class="connection-box">
+            <div>
+                <span id="statusIndicator" class="status-dot online"></span>
+                <span id="roomDisplay" style="font-size: 13px;"></span>
+                <div id="userProfileDisplay" style="font-size: 11px; color: #a6a6a6; margin-top: 2px;"></div>
+            </div>
+            <button class="btn-secondary" onclick="exitRoom()">Disconnect</button>
         </div>
 
-        <div class="flex">
-            <button id="tab-exp" onclick="setTab('exp')">Shared Expense</button>
-            <button id="tab-rep" onclick="setTab('rep')">Repayment</button>
+        <div class="tab-container">
+            <button class="tab-btn active" id="tabExpense" onclick="switchMode('expense')">Shared Expense</button>
+            <button class="tab-btn" id="tabPayment" onclick="switchMode('payment')">Direct Repayment</button>
         </div>
 
-        <div id="form-exp">
-            <select id="payer-sel"></select>
-            <select id="cat-sel">
-                <option>Food & Provisions</option><option>Hostel Shared Items</option>
-                <option>Fuel / Transport</option><option>Data Bundles</option>
-            </select>
-            <input type="number" id="cost" placeholder="Total Cost (GH₵)">
-            <button onclick="processExpense()">Add & Broadcast</button>
+        <!-- Form A: Shared Expense -->
+        <div id="expenseForm">
+            <div class="input-group">
+                <label for="payer">Who Paid?</label>
+                <select id="payer"></select>
+            </div>
+            <div class="input-group">
+                <label for="category">What was bought?</label>
+                <select id="category">
+                    <option>Food & Provisions</option>
+                    <option>Hostel Shared Items</option>
+                    <option>Fuel / Transport</option>
+                    <option>Data Bundles</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label for="amount">Total Cost (GH₵)</label>
+                <input type="number" id="amount" step="0.01" min="0.01">
+            </div>
+            <button class="btn-action" onclick="addExpense()">Add & Broadcast Split</button>
         </div>
 
-        <div id="form-rep" class="hidden">
-            <label><input type="checkbox" id="proxy-mode" onchange="toggleProxy()"> Proxy Mode</label>
-            <select id="sender-sel" class="hidden"></select>
-            <select id="receiver-sel"></select>
-            <input type="number" id="rep-amt" placeholder="Amount (GH₵)">
-            <input type="text" id="momo-ref" placeholder="MoMo Reference">
-            <button onclick="processRepayment()">Log & Broadcast</button>
+        <!-- Form B: Direct Repayment -->
+        <div id="paymentForm" style="display: none;">
+            <div class="checkbox-container">
+                <input type="checkbox" id="proxyToggle" onchange="toggleProxyPayment()">
+                <label for="proxyToggle" style="display: inline; text-transform: none; font-size: 13px;">
+                    I am paying for a roommate whose phone is offline
+                </label>
+            </div>
+
+            <div class="input-group" id="senderContainer" style="display: none;">
+                <label for="sender">Who is paying?</label>
+                <select id="sender" onchange="rebuildDynamicDropdowns()"></select>
+            </div>
+
+            <div class="input-group">
+                <label for="receiver">Who are you paying?</label>
+                <select id="receiver"></select>
+            </div>
+
+            <div class="row">
+                <div class="input-group">
+                    <label for="payAmount">Amount (GH₵)</label>
+                    <input type="number" id="payAmount" step="0.01" min="0.01">
+                </div>
+                <div class="input-group">
+                    <label for="momoRef">MoMo Ref</label>
+                    <input type="text" id="momoRef" placeholder="Reference ID">
+                </div>
+            </div>
+            <button class="btn-action" onclick="settleDebtDirect()">Log & Broadcast Repayment</button>
         </div>
 
-        <div id="standings" style="margin-top:20px;"><h3>Net Balances</h3></div>
-        <div id="log-stream" style="margin-top:20px; max-height:150px; overflow-y:auto;"></div>
+        <!-- Standing Grid -->
+        <div class="results-section">
+            <div class="section-title">Group Standings</div>
+            <div id="balancesGrid"></div>
+        </div>
+
+        <!-- History Log Stream -->
+        <div class="ledger-section">
+            <div class="section-title">Live Room Activity Stream</div>
+            <div id="historyLog"></div>
+        </div>
     </div>
 </div>
 
 <script>
-    const members = ['Osborn', 'Kofi', 'Ama', 'Kojo', 'Yaw'];
-    let state = { user: '', room: '', balances: { Osborn:0, Kofi:0, Ama:0, Kojo:0, Yaw:0 } };
-    const supabase = supabase.createClient('https://vgtmpvworduaipcjwbym.supabase.co', 'sb_publishable_eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZndG1wdndvcmR1YWlwY2p3YnltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTY4ODg3NzcsImV4cCI6MjAzMjQ2NDc3N30.R_64vHsc7L7tMeymQpY4_C24rW0I7A_g1mUfUclM3H4');
+    const URL_TARGET = 'https://vgtmpvworduaipcjwbym.supabase.co';
+    const KEY_TARGET = 'sb_publishable_eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZndG1wdndvcmR1YWlwY2p3YnltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTY4ODg3NzcsImV4cCI6MjAzMjQ2NDc3N30.R_64vHsc7L7tMeymQpY4_C24rW0I7A_g1mUfUclM3H4';
 
-    function initApp() {
-        state.user = document.getElementById('user-input').value;
-        state.room = document.getElementById('room-input').value;
-        document.getElementById('screen-gateway').classList.add('hidden');
-        document.getElementById('screen-workspace').classList.remove('hidden');
-        document.getElementById('status-dot').classList.add('online');
-        document.getElementById('display-room').innerText = state.room;
-        document.getElementById('display-user').innerText = state.user;
-        populateSelects();
-        renderStandings();
+    let supabaseClient = null;
+    let myIdentity = "";
+    let currentRoom = "";
+
+    let groupBalances = {
+        "Osborn": 0,
+        "Kofi": 0,
+        "Ama": 0,
+        "Kojo": 0,
+        "Yaw": 0
+    };
+
+    window.onload = function() {
+        try {
+            if (window.supabase && typeof window.supabase.createClient === 'function') {
+                supabaseClient = window.supabase.createClient(URL_TARGET, KEY_TARGET);
+            }
+        } catch(e) {
+            console.error("Supabase module setup error: ", e);
+        }
+    };
+
+    function connectToRoomUI() {
+        const codeVal = document.getElementById('roomCodeInput').value.trim();
+        const nameVal = document.getElementById('currentUserInput').value.trim();
+
+        if (!codeVal || !nameVal) {
+            alert("Please fill out both fields!");
+            return;
+        }
+
+        currentRoom = codeVal.toUpperCase();
+        myIdentity = nameVal.charAt(0).toUpperCase() + nameVal.slice(1);
+
+        document.getElementById('roomDisplay').innerText = "Room: " + currentRoom;
+        document.getElementById('userProfileDisplay').innerText = "Active User: " + myIdentity;
+
+        document.getElementById('linkScreen').style.display = "none";
+        document.getElementById('appContent').style.display = "block";
+
+        rebuildDynamicDropdowns();
+        updateBalancesUI();
     }
 
-    function populateSelects() {
-        ['payer-sel', 'sender-sel', 'receiver-sel'].forEach(id => {
-            const el = document.getElementById(id);
-            el.innerHTML = members.map(m => `<option value="${m}">${m}</option>`).join('');
+    function exitRoom() {
+        document.getElementById('linkScreen').style.display = "block";
+        document.getElementById('appContent').style.display = "none";
+    }
+
+    function rebuildDynamicDropdowns() {
+        const members = Object.keys(groupBalances);
+        const payer = document.getElementById('payer');
+        const sender = document.getElementById('sender');
+        const receiver = document.getElementById('receiver');
+
+        if (!payer || !sender || !receiver) return;
+
+        const isProxyMode = document.getElementById('proxyToggle').checked;
+
+        const oldPayer = payer.value;
+        const oldSender = sender.value;
+        const oldReceiver = receiver.value;
+
+        payer.innerHTML = "";
+        sender.innerHTML = "";
+
+        members.forEach(name => {
+            payer.innerHTML += `<option value="${name}">${name}</option>`;
+            if (name !== myIdentity) {
+                sender.innerHTML += `<option value="${name}">${name}</option>`;
+            }
+        });
+
+        if (oldPayer) payer.value = oldPayer;
+        if (oldSender) sender.value = oldSender;
+
+        const activeSender = isProxyMode ? (sender.value || members[1]) : myIdentity;
+
+        receiver.innerHTML = "";
+        members.forEach(name => {
+            if (name !== activeSender) {
+                receiver.innerHTML += `<option value="${name}">${name}</option>`;
+            }
+        });
+
+        if (oldReceiver && oldReceiver !== activeSender) receiver.value = oldReceiver;
+    }
+
+    function toggleProxyPayment() {
+        const isChecked = document.getElementById('proxyToggle').checked;
+        document.getElementById('senderContainer').style.display = isChecked ? 'block' : 'none';
+        rebuildDynamicDropdowns();
+    }
+
+    function updateBalancesUI() {
+        const grid = document.getElementById('balancesGrid');
+        if (!grid) return;
+        grid.innerHTML = "";
+
+        Object.keys(groupBalances).forEach(name => {
+            let bal = groupBalances[name];
+            let cls = "status-neutral";
+            let text = "Settled";
+
+            if (bal > 0) {
+                cls = "status-positive";
+                text = "+ GH₵ " + bal.toFixed(2);
+            } else if (bal < 0) {
+                cls = "status-negative";
+                text = "- GH₵ " + Math.abs(bal).toFixed(2);
+            }
+
+            grid.innerHTML += `
+            <div class="member-row">
+                <div class="member-name">${name}</div>
+                <div class="balance-display ${cls}">${text}</div>
+            </div>`;
         });
     }
 
-    function renderStandings() {
-        const container = document.getElementById('standings');
-        container.innerHTML = members.map(m => `<div>${m}: <span style="color:${state.balances[m]>=0?'#00cc66':'#ff4d4d'}">${state.balances[m] >= 0 ? '+' : ''}${state.balances[m].toFixed(2)}</span></div>`).join('');
+    function pushDatabaseBalances() {
+        if (!supabaseClient || !currentRoom) return;
+
+        supabaseClient
+        .from('groups')
+        .update({
+            osborn_bal: groupBalances["Osborn"],
+            kofi_bal: groupBalances["Kofi"],
+            ama_bal: groupBalances["Ama"],
+            kojo_bal: groupBalances["Kojo"],
+            yaw_bal: groupBalances["Yaw"]
+        })
+        .eq('room_code', currentRoom)
+        .then(() => {});
     }
 
-    function processExpense() {
-        const amt = parseFloat(document.getElementById('cost').value);
-        if(amt <= 0) return;
-        const payer = document.getElementById('payer-sel').value;
-        const split = amt / 5;
-        members.forEach(m => state.balances[m] -= split);
-        state.balances[payer] += amt;
-        updateLog(`${payer} bought ${document.getElementById('cat-sel').value}`, amt, '#00cc66');
-        renderStandings();
-        sync();
+    function addExpense() {
+        const payerVal = document.getElementById('payer').value;
+        const categoryVal = document.getElementById('category').value;
+        const amountInput = document.getElementById('amount');
+        const amount = parseFloat(amountInput.value);
+
+        if (isNaN(amount) || amount <= 0) {
+            alert("Please enter a valid positive amount.");
+            return;
+        }
+
+        const members = Object.keys(groupBalances);
+        const share = amount / members.length;
+
+        members.forEach(name => {
+            groupBalances[name] -= share;
+        });
+        groupBalances[payerVal] += amount;
+
+        updateBalancesUI();
+        pushDatabaseBalances();
+
+        document.getElementById('historyLog').innerHTML += `
+        <div class="ledger-item">
+            <div class="ledger-details">
+                <div class="ledger-title"><strong>${payerVal}</strong> bought <strong>${categoryVal}</strong></div>
+                <div class="ledger-sub">Shared Expense Added</div>
+            </div>
+            <div class="ledger-val text-green">GH₵ ${amount.toFixed(2)}</div>
+        </div>`;
+
+        amountInput.value = "";
     }
 
-    function processRepayment() {
-        const amt = parseFloat(document.getElementById('rep-amt').value);
-        const sender = document.getElementById('proxy-mode').checked ? document.getElementById('sender-sel').value : state.user;
-        const receiver = document.getElementById('receiver-sel').value;
-        state.balances[sender] += amt;
-        state.balances[receiver] -= amt;
-        updateLog(`${sender} paid ${receiver}`, amt, '#ffaa00');
-        renderStandings();
-        sync();
+    function settleDebtDirect() {
+        const isProxyMode = document.getElementById('proxyToggle').checked;
+        const senderVal = isProxyMode ? document.getElementById('sender').value : myIdentity;
+        const receiverVal = document.getElementById('receiver').value;
+        const amountInput = document.getElementById('payAmount');
+        const amount = parseFloat(amountInput.value);
+        const refInput = document.getElementById('momoRef');
+        const ref = refInput.value.trim();
+
+        if (senderVal === receiverVal) {
+            alert("Sender and receiver cannot match.");
+            return;
+        }
+
+        if (isNaN(amount) || amount <= 0) {
+            alert("Please enter a valid positive amount.");
+            return;
+        }
+
+        groupBalances[senderVal] += amount;
+        groupBalances[receiverVal] -= amount;
+
+        updateBalancesUI();
+        pushDatabaseBalances();
+
+        document.getElementById('historyLog').innerHTML += `
+        <div class="ledger-item">
+            <div class="ledger-details">
+                <div class="ledger-title"><strong>${senderVal}</strong> paid <strong>${receiverVal}</strong></div>
+                <div class="ledger-sub">${ref || "Direct Repayment"}</div>
+            </div>
+            <div class="ledger-val text-yellow">GH₵ ${amount.toFixed(2)}</div>
+        </div>`;
+
+        amountInput.value = "";
+        refInput.value = "";
     }
 
-    function sync() {
-        supabase.from('groups').update({
-            osborn_bal: state.balances.Osborn, kofi_bal: state.balances.Kofi,
-            ama_bal: state.balances.Ama, kojo_bal: state.balances.Kojo, yaw_bal: state.balances.Yaw
-        }).eq('room_code', state.room).then(() => console.log("Synced"));
-    }
+    function switchMode(mode) {
+        const expenseForm = document.getElementById('expenseForm');
+        const paymentForm = document.getElementById('paymentForm');
+        const tabExpense = document.getElementById('tabExpense');
+        const tabPayment = document.getElementById('tabPayment');
 
-    function updateLog(txt, val, color) {
-        const log = document.getElementById('log-stream');
-        log.innerHTML = `<div class="ledger-item">${txt} <span style="color:${color}">GH₵${val.toFixed(2)}</span></div>` + log.innerHTML;
-    }
-
-    function setTab(t) {
-        document.getElementById('form-exp').classList.toggle('hidden', t !== 'exp');
-        document.getElementById('form-rep').classList.toggle('hidden', t !== 'rep');
-    }
-
-    function toggleProxy() {
-        document.getElementById('sender-sel').classList.toggle('hidden', !document.getElementById('proxy-mode').checked);
+        if (mode === "expense") {
+            expenseForm.style.display = "block";
+            paymentForm.style.display = "none";
+            tabExpense.classList.add("active");
+            tabPayment.classList.remove("active");
+        } else {
+            expenseForm.style.display = "none";
+            paymentForm.style.display = "block";
+            tabExpense.classList.remove("active");
+            tabPayment.classList.add("active");
+        }
+        rebuildDynamicDropdowns();
     }
 </script>
 </body>
