@@ -2,37 +2,145 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SusuSplit | Financial Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SusuSplit | Ledger</title>
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#121212">
+    <meta name="theme-color" content="#00cc66">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --accent: #00ff66; --bg: #121212; --card: #1e1e1e; }
-        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; padding-top: 50px; }
-        .dashboard { background: var(--card); padding: 2rem; border-radius: 16px; width: 90%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        input { width: 100%; padding: 12px; margin: 10px 0; background: #2a2a2a; border: 1px solid #444; color: white; border-radius: 8px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: var(--accent); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: black; margin-top: 10px; }
-        h1 { color: var(--accent); margin-top: 0; }
+        :root { --bg: #0d0d0d; --card: #1a1a1a; --accent: #00cc66; --err: #ff4d4d; --pending: #ffaa00; }
+        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', system-ui; margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .wrapper { width: 100%; max-width: 450px; border: 1px solid var(--accent); border-radius: 20px; padding: 20px; box-shadow: 0 8px 24px rgba(0,204,102,0.15); background: var(--card); }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; background: #222; border: 1px solid #333; color: white; border-radius: 8px; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; background: linear-gradient(135deg, var(--accent) 0%, #00994d 100%); border: none; border-radius: 8px; font-weight: bold; color: #000; cursor: pointer; margin-top: 10px; }
+        .hidden { display: none; }
+        .flex { display: flex; gap: 10px; }
+        .status-dot { height: 10px; width: 10px; border-radius: 50%; background: var(--err); display: inline-block; }
+        .status-dot.online { background: var(--accent); }
+        .ledger-item { border-bottom: 1px dashed #333; padding: 10px 0; font-size: 0.9em; }
     </style>
 </head>
 <body>
-    <div class="dashboard">
+
+<div class="wrapper" id="app">
+    <!-- GATEWAY -->
+    <div id="screen-gateway">
         <h1>SusuSplit</h1>
-        <p>Ledger Calculation</p>
-        <input type="number" id="amount" placeholder="Total Amount ($)">
-        <input type="number" id="people" placeholder="Participants">
-        <button onclick="calculate()">SPLIT TRANSACTION</button>
-        <h2 id="result"></h2>
+        <input type="text" id="room-input" value="CAMPUS-404">
+        <input type="text" id="user-input" placeholder="Your Name">
+        <button onclick="initApp()">ENTER LEDGER</button>
     </div>
 
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
-        }
-        function calculate() {
-            const res = (document.getElementById('amount').value / document.getElementById('people').value).toFixed(2);
-            document.getElementById('result').innerText = isNaN(res) ? "" : "Share: $" + res;
-        }
-    </script>
+    <!-- MAIN WORKSPACE -->
+    <div id="screen-workspace" class="hidden">
+        <div style="background:#222; padding:10px; border-radius:8px; font-size:0.8em; margin-bottom:15px;">
+            <span class="status-dot" id="status-dot"></span> <span id="display-room"></span> | <span id="display-user"></span>
+            <button onclick="location.reload()" style="padding:2px; width:auto; float:right;">Disconnect</button>
+        </div>
+
+        <div class="flex">
+            <button id="tab-exp" onclick="setTab('exp')">Shared Expense</button>
+            <button id="tab-rep" onclick="setTab('rep')">Repayment</button>
+        </div>
+
+        <div id="form-exp">
+            <select id="payer-sel"></select>
+            <select id="cat-sel">
+                <option>Food & Provisions</option><option>Hostel Shared Items</option>
+                <option>Fuel / Transport</option><option>Data Bundles</option>
+            </select>
+            <input type="number" id="cost" placeholder="Total Cost (GH₵)">
+            <button onclick="processExpense()">Add & Broadcast</button>
+        </div>
+
+        <div id="form-rep" class="hidden">
+            <label><input type="checkbox" id="proxy-mode" onchange="toggleProxy()"> Proxy Mode</label>
+            <select id="sender-sel" class="hidden"></select>
+            <select id="receiver-sel"></select>
+            <input type="number" id="rep-amt" placeholder="Amount (GH₵)">
+            <input type="text" id="momo-ref" placeholder="MoMo Reference">
+            <button onclick="processRepayment()">Log & Broadcast</button>
+        </div>
+
+        <div id="standings" style="margin-top:20px;"><h3>Net Balances</h3></div>
+        <div id="log-stream" style="margin-top:20px; max-height:150px; overflow-y:auto;"></div>
+    </div>
+</div>
+
+<script>
+    const members = ['Osborn', 'Kofi', 'Ama', 'Kojo', 'Yaw'];
+    let state = { user: '', room: '', balances: { Osborn:0, Kofi:0, Ama:0, Kojo:0, Yaw:0 } };
+    const supabase = supabase.createClient('https://vgtmpvworduaipcjwbym.supabase.co', 'sb_publishable_eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZndG1wdndvcmR1YWlwY2p3YnltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTY4ODg3NzcsImV4cCI6MjAzMjQ2NDc3N30.R_64vHsc7L7tMeymQpY4_C24rW0I7A_g1mUfUclM3H4');
+
+    function initApp() {
+        state.user = document.getElementById('user-input').value;
+        state.room = document.getElementById('room-input').value;
+        document.getElementById('screen-gateway').classList.add('hidden');
+        document.getElementById('screen-workspace').classList.remove('hidden');
+        document.getElementById('status-dot').classList.add('online');
+        document.getElementById('display-room').innerText = state.room;
+        document.getElementById('display-user').innerText = state.user;
+        populateSelects();
+        renderStandings();
+    }
+
+    function populateSelects() {
+        ['payer-sel', 'sender-sel', 'receiver-sel'].forEach(id => {
+            const el = document.getElementById(id);
+            el.innerHTML = members.map(m => `<option value="${m}">${m}</option>`).join('');
+        });
+    }
+
+    function renderStandings() {
+        const container = document.getElementById('standings');
+        container.innerHTML = members.map(m => `<div>${m}: <span style="color:${state.balances[m]>=0?'#00cc66':'#ff4d4d'}">${state.balances[m] >= 0 ? '+' : ''}${state.balances[m].toFixed(2)}</span></div>`).join('');
+    }
+
+    function processExpense() {
+        const amt = parseFloat(document.getElementById('cost').value);
+        if(amt <= 0) return;
+        const payer = document.getElementById('payer-sel').value;
+        const split = amt / 5;
+        members.forEach(m => state.balances[m] -= split);
+        state.balances[payer] += amt;
+        updateLog(`${payer} bought ${document.getElementById('cat-sel').value}`, amt, '#00cc66');
+        renderStandings();
+        sync();
+    }
+
+    function processRepayment() {
+        const amt = parseFloat(document.getElementById('rep-amt').value);
+        const sender = document.getElementById('proxy-mode').checked ? document.getElementById('sender-sel').value : state.user;
+        const receiver = document.getElementById('receiver-sel').value;
+        state.balances[sender] += amt;
+        state.balances[receiver] -= amt;
+        updateLog(`${sender} paid ${receiver}`, amt, '#ffaa00');
+        renderStandings();
+        sync();
+    }
+
+    function sync() {
+        supabase.from('groups').update({
+            osborn_bal: state.balances.Osborn, kofi_bal: state.balances.Kofi,
+            ama_bal: state.balances.Ama, kojo_bal: state.balances.Kojo, yaw_bal: state.balances.Yaw
+        }).eq('room_code', state.room).then(() => console.log("Synced"));
+    }
+
+    function updateLog(txt, val, color) {
+        const log = document.getElementById('log-stream');
+        log.innerHTML = `<div class="ledger-item">${txt} <span style="color:${color}">GH₵${val.toFixed(2)}</span></div>` + log.innerHTML;
+    }
+
+    function setTab(t) {
+        document.getElementById('form-exp').classList.toggle('hidden', t !== 'exp');
+        document.getElementById('form-rep').classList.toggle('hidden', t !== 'rep');
+    }
+
+    function toggleProxy() {
+        document.getElementById('sender-sel').classList.toggle('hidden', !document.getElementById('proxy-mode').checked);
+    }
+</script>
 </body>
 </html>
