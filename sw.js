@@ -1,42 +1,31 @@
-const CACHE_NAME = 'sususplit-cache-v6';
-const urlsToCache = [
-  './',
-  './index.html',
-  './manifest.json',
-  './icon.png',
-  './icon-512.png'
+const CACHE_NAME = 'sususplit-v2';
+const ASSETS = [
+  '/',
+  '/index.html',
+  '/manifest.json'
 ];
 
-self.addEventListener('install', event => {
+// Install: Pre-cache assets
+self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('Cache updated to v6');
-        return cache.addAll(urlsToCache);
-      })
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
   );
 });
 
-self.addEventListener('fetch', event => {
+// Fetch: Strategy to serve from cache first
+self.addEventListener('fetch', (event) => {
   event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        return response || fetch(event.request);
-      })
+    caches.match(event.request).then((cachedResponse) => {
+      return cachedResponse || fetch(event.request);
+    })
   );
 });
 
-self.addEventListener('activate', event => {
-  const cacheWhitelist = [CACHE_NAME];
+// Activate: Clean up old versions
+self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
+    caches.keys().then((keys) => Promise.all(
+      keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+    ))
   );
 });
